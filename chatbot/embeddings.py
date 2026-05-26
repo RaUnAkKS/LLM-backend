@@ -1,5 +1,6 @@
 from .models import DocumentChunk
-
+from django.core.cache import cache
+import hashlib
 def chunk_text(text, chunk_size=500, overlap=100):
     chunks = []
     start = 0
@@ -24,7 +25,14 @@ def _get_model():
     return _model
 
 def get_embedding(text):
-    return _get_model().encode(text).tolist()
+    cache_key = f"embedding_{hashlib.md5(text.encode('utf-8')).hexdigest()}"
+    cached_emb = cache.get(cache_key)
+    if cached_emb:
+        return cached_emb
+
+    emb = _get_model().encode(text).tolist()
+    cache.set(cache_key, emb, timeout=86400 * 7) # Cache for 7 days
+    return emb
 
 import numpy as np
 
@@ -63,6 +71,11 @@ def get_top_k_chunks(question, document_id, k=3):
     return search_faiss(document_id, query_embedding, k)
 
 def get_diverse_chunks(document_id, k=8):
+    cache_key = f"diverse_chunks_{document_id}_{k}"
+    cached_chunks = cache.get(cache_key)
+    if cached_chunks:
+        return cached_chunks
+
     chunks = DocumentChunk.objects.filter(document_id=document_id)
 
     total = len(chunks)
@@ -75,4 +88,5 @@ def get_diverse_chunks(document_id, k=8):
         if len(selected) >= k:
             break
 
+    cache.set(cache_key, selected, timeout=86400 * 7)
     return selected

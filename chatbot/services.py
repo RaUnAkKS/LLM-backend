@@ -1,6 +1,8 @@
 import json
 from groq import Groq
 from django.conf import settings
+from django.core.cache import cache
+import hashlib
 from .embeddings import get_top_k_chunks
 client = Groq(api_key=settings.GROQ_API_KEY)
 
@@ -150,6 +152,12 @@ def ask_llm(question: str, history, tone: str, document_id: int = None) -> str:
     return response.choices[0].message.content
 
 def classify_query(question: str):
+    # Generate a cache key based on the question
+    cache_key = f"classify_query_{hashlib.md5(question.encode('utf-8')).hexdigest()}"
+    cached_result = cache.get(cache_key)
+    if cached_result:
+        return cached_result
+
     prompt = f"""
     Classify the user query into one of these types:
 
@@ -167,4 +175,6 @@ def classify_query(question: str):
         temperature=0
     )
 
-    return response.choices[0].message.content.strip().lower()
+    result = response.choices[0].message.content.strip().lower()
+    cache.set(cache_key, result, timeout=86400) # Cache for 24 hours
+    return result
