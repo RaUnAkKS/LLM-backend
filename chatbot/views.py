@@ -38,23 +38,36 @@ class AskAPIView(APIView):
             content=question
         )
         history = Message.objects.filter(session=session).order_by("created_at")
-        response_text = ask_llm(question, history, tone, document_id)
-
         try:
-            ai_response = json.loads(response_text)
-        except:
-            ai_response = {"raw": response_text}
+            response_text = ask_llm(question, history, tone, document_id)
+            
+            try:
+                ai_response = json.loads(response_text)
+            except:
+                ai_response = {"raw": response_text}
 
-        Message.objects.create(
-            session=session,
-            role="assistant",
-            content=response_text
-        )
+            Message.objects.create(
+                session=session,
+                role="assistant",
+                content=response_text
+            )
 
-        return Response({
-            "session_id": session.id,
-            "answer": ai_response
-        })  
+            return Response({
+                "session_id": session.id,
+                "answer": ai_response
+            })  
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.exception("Error in AskAPIView")
+            
+            err_msg = str(e)
+            if "getaddrinfo failed" in err_msg or "Connection error" in err_msg or "ConnectError" in err_msg:
+                friendly_msg = "Connection to the Groq AI service failed. Please check your internet connection, proxy, or VPN settings."
+            else:
+                friendly_msg = f"Failed to get AI response: {err_msg}"
+                
+            return Response({"error": friendly_msg}, status=status.HTTP_502_BAD_GATEWAY)
     
 class ChatSessionListAPIView(APIView):
     def get(self, request):
@@ -68,6 +81,22 @@ class ChatSessionListAPIView(APIView):
                 })
         return Response(data)
 
+class SessionMessagesAPIView(APIView):
+    def get(self, request, session_id):
+        try:
+            session = ChatSession.objects.get(id=session_id)
+            messages = Message.objects.filter(session=session).order_by("created_at")
+            data = []
+            for msg in messages:
+                data.append({
+                    "role": msg.role,
+                    "content": msg.content,
+                    "created_at": msg.created_at
+                })
+            return Response(data)
+        except ChatSession.DoesNotExist:
+            return Response({"error": "Session not found"}, status=404)
+
 class DocumentUploadAPIView(APIView):
 
     def post(self, request):
@@ -75,6 +104,15 @@ class DocumentUploadAPIView(APIView):
 
         if not file:
             return Response({"error": "No file provided"}, status=400)
+
+        # Validate file size (10MB limit)
+        if file.size > 10 * 1024 * 1024:
+            return Response({"error": "File size must be less than 10MB"}, status=400)
+
+        # Validate extension
+        ext = file.name.split('.')[-1].lower()
+        if ext not in ['pdf', 'docx', 'txt']:
+            return Response({"error": "Only PDF, DOCX, and TXT files are allowed"}, status=400)
 
         try:
             text = extract_text_from_file(file)

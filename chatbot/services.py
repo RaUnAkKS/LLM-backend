@@ -3,7 +3,7 @@ from groq import Groq
 from django.conf import settings
 from django.core.cache import cache
 import hashlib
-from .embeddings import get_top_k_chunks
+from .embeddings import get_top_k_chunks, get_diverse_chunks
 client = Groq(api_key=settings.GROQ_API_KEY)
 
 def build_messages(system_prompt, history, user_question, document_id=None):

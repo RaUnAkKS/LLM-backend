@@ -13,7 +13,7 @@ def _generate_otp():
 # ─── Task 1: Pre-registration OTP (SendOTPView, ForgotSendOTPView) ────────────
 @shared_task(
     bind=True,
-    queue='email',              # ← dedicated email queue
+    queue='email',
     max_retries=3,
     default_retry_delay=10,     # retry after 10s if SMTP fails
 )
@@ -52,7 +52,7 @@ def send_otp_to_email_task(self, email):
 # ─── Task 2: Post-registration / Forgot Password OTP (User model) ─────────────
 @shared_task(
     bind=True,
-    queue='email',              # ← same dedicated email queue
+    queue='email',
     max_retries=3,
     default_retry_delay=10,
 )

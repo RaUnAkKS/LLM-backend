@@ -20,3 +20,9 @@ db.sqlite3-journal
 # OS
 .DS_Store
 Thumbs.db
+
+# User Uploads and FAISS Index Files
+documents/
+faiss_indexes/
+faiss_*.index
+faiss_*_map.json

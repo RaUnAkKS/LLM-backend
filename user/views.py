@@ -7,7 +7,9 @@ from .serializers import (
     UserRegistrationSerializer, VerifyEmailSerializer,
     UserLoginSerializer, UserProfileSerializer,
     UserUpdateSerializer, ChangePasswordSerializer,
-    SendOTPSerializer, VerifyPreRegistrationOTPSerializer
+    SendOTPSerializer, VerifyPreRegistrationOTPSerializer,
+    ForgotSendOTPSerializer, ForgotPasswordSerializer,
+    GoogleSignInSerializer
 )
 
 

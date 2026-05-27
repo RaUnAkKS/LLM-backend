@@ -31,6 +31,9 @@ def process_document(self, document_id):
         # Step B: Chunk the text
         chunks = chunk_text(text)
 
+        # Clear any existing chunks (e.g. from a previous failed attempt)
+        DocumentChunk.objects.filter(document=document).delete()
+
         # Step C: Embed each chunk + save to DB
         chunks_data = []
         for i, chunk in enumerate(chunks):

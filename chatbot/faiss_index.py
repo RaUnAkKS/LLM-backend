@@ -8,10 +8,12 @@ faiss_indexes = {}   # {document_id: index}
 chunk_text_map = {}  # {document_id: [chunk_texts]}
 
 def get_index_path(document_id):
-    return f"faiss_{document_id}.index"
+    os.makedirs("faiss_indexes", exist_ok=True)
+    return os.path.join("faiss_indexes", f"faiss_{document_id}.index")
 
 def get_map_path(document_id):
-    return f"faiss_{document_id}_map.json"
+    os.makedirs("faiss_indexes", exist_ok=True)
+    return os.path.join("faiss_indexes", f"faiss_{document_id}_map.json")
 
 def create_faiss_index(document_id, chunks):
     """

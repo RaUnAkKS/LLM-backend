@@ -16,7 +16,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         ext=value.name.split('.')[-1].lower()
         if ext not in ['pdf','txt','docx']:
             raise serializers.ValidationError("Only PDF, TXT, DOCX files are allowed")
-        if value.size > 5 * 1024 * 1024:
+        if value.size > 10 * 1024 * 1024:
             raise serializers.ValidationError("File size must be less than 10MB")
         return value
 
